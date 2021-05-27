@@ -142,7 +142,7 @@ class Knight(Player):
                 if board[list_board[x][y]] != 'E':
                     # print(board[list_board[x][y]])
                     if board[list_board[x][y]].color != self.color:
-                        print(x, y)
+                        # print(x, y)
                         self.moves.append(self.position+list_board[x][y])
                 else:
                     self.moves.append(self.position+list_board[x][y])
@@ -301,6 +301,9 @@ class Board:
         self.create_Board()
         self.history = {'R': [], 'r': [], 'N': [], 'n': [], 'B': [], 'b': [
         ], 'Q': [], 'q': [], 'K': [], 'k': [], 'P': [], 'p': []}
+        self.over_written = None
+        self.over_writer = None
+        self.last_move = ''
 
     def legal_moves_of(self, board):
         global LIST_BOARD
@@ -310,7 +313,7 @@ class Board:
             if board[key] != 'E' and self.turn != board[key].color:
                 # print(BOARD[key].position)
                 board[key].moves_Available(
-                    LIST_BOARD, board, self.turn)
+                    LIST_BOARD, board, board[key].color)
                 moves = board[key].moves
                 if (len(moves) > 0):
                     moves_list.append(moves)
@@ -331,6 +334,11 @@ class Board:
                 if (len(moves) > 0):
                     moves_list.append(moves)
         x = [j for sub in moves_list for j in sub]
+#
+#   P K q
+#   b
+#
+#
 
         # if self.check is True:
         y = self.is_CheckMate(x)
@@ -506,7 +514,10 @@ class Board:
         # SET THE NEW POSITION OF THIS PIECE TO LATTER HALF OF THE new_move
         new_position = new_move[2:]
         old_position = new_move[:2]
-
+        if (self.board[new_position] != 'E' and self.board[new_position].name in ['k', 'K']):
+            print("AAAAAAA YOU ARE WRONG")
+            self.check_Mate = True
+            return
         self.board[new_position] = self.board[old_position]
         self.board[new_position].position = new_position
 
@@ -534,3 +545,43 @@ class Board:
             if self.board[key] != 'E' and self.board[key].color != self.turn:
                 worth += self.board[key].worth
         return worth
+
+    def push(self, new_move):
+        print("Pushing ", new_move)
+        new_position = new_move[2:]
+        old_position = new_move[:2]
+
+        # Save the overwritten and overwrite pieces for pop
+        self.over_written = self.board[new_position]
+        self.over_writer = self.board[old_position]
+        self.last_move = new_move
+
+        self.board[new_position] = self.board[old_position]
+        self.board[new_position].position = new_position
+        if '1' in new_position and self.board[new_position].name == 'P':
+            self.promote(new_position)
+        elif '8' in new_position and self.board[new_position].name == 'p':
+            self.promote(new_position)
+
+        # SET THE OLD POSITION OF THIS PIECE TO EMPTY
+        self.board[old_position] = 'E'
+        if self.turn == "White":
+            self.turn = "Black"
+        else:
+            self.turn = "White"
+
+        name = self.board[new_position].name
+        # self.history[name].append(name + '-' + new_move)
+
+    def pop(self):
+        print("Popping ", self.last_move)
+        self.board[self.last_move[:2]] = self.over_writer
+        self.board[self.last_move[2:]] = self.over_written
+
+        self.over_writer = None
+        self.over_written = None
+        self.last_move = ''
+        if self.turn == "White":
+            self.turn = "Black"
+        else:
+            self.turn = "White"
