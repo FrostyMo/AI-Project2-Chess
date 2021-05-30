@@ -1,46 +1,66 @@
 from my_chess import *
 from random import randint
+from copy import deepcopy
 import math
 
 
-def minimax(board_copy, depth, alpha, beta, maximizingPlayer):
+def minimax(board_copy, depth, alpha, beta, maximizingPlayer, move_count):
     if depth == 0:  # or game over
-        print("Returning with worth: ", board_copy.calculate_Board_Worth())
-        return board_copy.calculate_Board_Worth(), board_copy  # Static eval of position
+        # print("Returning with worth: ", board_copy.calculate_Board_Worth())
+        # Static eval of position
+        return board_copy.calculate_Board_Worth(), deepcopy(board_copy)
+    # board_copy.print_ChessBoard()
     moves = board_copy.legal_moves()
-    board_copy.print_ChessBoard()
+
     if maximizingPlayer == True:
-        print("Max depth", depth)
+        # print("Max depth", depth)
         maxEval = -math.inf
-        best_board = {}
+        best_board = None
         for move in moves:
             board_copy.push(move)
-            eval, new_board = minimax(board_copy, depth-1, alpha, beta, False)
+            eval, new_board = minimax(
+                board_copy, depth-1, alpha, beta, False, move_count)
 
             if maxEval < eval:
+                # print("Choosing best max")
                 best_board = new_board
-
+                # best_board.print_ChessBoard()
+            else:
+                if len(best_board.last_move) > move_count:
+                    best_board.pop()
             maxEval = max(maxEval, eval)
             alpha = max(alpha, eval)
             board_copy.pop()
             if beta <= alpha:
+                # best_board = new_board
                 break
+        # print("Before returning maximum: ~~~~")
+        # best_board.print_ChessBoard()
         return maxEval, best_board
     else:
         minEval = +math.inf
-        print("Min depth", depth)
+        #print("Min depth", depth)
+        best_board = None
         for move in moves:
             board_copy.push(move)
-            eval, new_board = minimax(board_copy, depth-1, alpha, beta, True)
+            eval, new_board = minimax(
+                board_copy, depth-1, alpha, beta, True, move_count)
 
             if minEval > eval:
+                # print("Choosing best min")
                 best_board = new_board
-
+                # best_board.print_ChessBoard()
+            else:
+                if len(best_board.last_move) > move_count:
+                    best_board.pop()
             minEval = min(minEval, eval)
             beta = min(beta, eval)
             board_copy.pop()
             if beta <= alpha:
+                # best_board = new_board
                 break
+        # print("Before returning minimum: ~~~~")
+        # best_board.print_ChessBoard()
         return minEval, best_board
 
 
@@ -60,9 +80,25 @@ def main():
 
     # print(b.history)
     board_copy = b
-    eval, b1 = minimax(board_copy, 3, -math.inf, +math.inf, True)
-    board_copy.print_ChessBoard()
-    b1.print_ChessBoard()
+    b1 = board_copy
+    for i in range(30):
+        eval, b1 = minimax(b1, 3, -math.inf, +math.inf, True, i+1)
+        # board_copy.print_ChessBoard()
+        # b1.print_ChessBoard()
+        # moves = b1.legal_moves()
+        # print(moves)
+        # while True:
+        #     new_move = input("Please enter your move (e.g a2a4): ")
+        #     if new_move in moves:
+        #         b1.move_From(new_move)
+        #         break
+        #     else:
+        #         print("Invalid Move entered, please enter again!")
+        b1.print_ChessBoard()
+        eval, b1 = minimax(b1, 3, -math.inf, +math.inf, False, i+1)
+        b1.print_ChessBoard()
+
+    print(b1.moves_log)
 
 
 main()

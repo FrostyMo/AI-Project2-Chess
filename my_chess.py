@@ -1,3 +1,5 @@
+from static_values import *
+
 # Create a board of size 8x8
 BOARD = {}
 
@@ -301,9 +303,11 @@ class Board:
         self.create_Board()
         self.history = {'R': [], 'r': [], 'N': [], 'n': [], 'B': [], 'b': [
         ], 'Q': [], 'q': [], 'K': [], 'k': [], 'P': [], 'p': []}
-        self.over_written = None
-        self.over_writer = None
-        self.last_move = ''
+        self.over_written = []
+        self.over_writer = []
+        self.last_move = []
+        self.moves_log = []
+        self.reverse_moves_log = []
 
     def legal_moves_of(self, board):
         global LIST_BOARD
@@ -458,7 +462,7 @@ class Board:
                 promotion, new_position, self.turn, 3)
 
     def is_CheckMate(self, moves):
-        print(moves)
+        # print(moves)
         board_copy = self.board
         new_moves_list = []
         for move in moves:
@@ -541,27 +545,69 @@ class Board:
     # So choose minimum worth
     def calculate_Board_Worth(self):
         worth = 0
+        # for key in self.board:
+        #     if self.board[key] != 'E' and self.board[key].color != self.turn:
+        #         worth -= self.board[key].worth
+
         for key in self.board:
-            if self.board[key] != 'E' and self.board[key].color != self.turn:
-                worth += self.board[key].worth
+            if self.board[key] != 'E' and self.board[key].color == self.turn:
+                if self.board[key].color == 'White':
+                    x, y = index_2d(LIST_BOARD, key)
+                    if self.board[key].name.lower() == 'p':
+                        worth += self.board[key].worth * PAWN[x][y]
+                    elif self.board[key].name.lower() == 'n':
+                        worth += self.board[key].worth * KNIGHT[x][y]
+                    elif self.board[key].name.lower() == 'b':
+                        worth += self.board[key].worth * BISHOP[x][y]
+                    elif self.board[key].name.lower() == 'r':
+                        worth += self.board[key].worth * ROOK[x][y]
+                    elif self.board[key].name.lower() == 'q':
+                        worth += self.board[key].worth * QUEEN[x][y]
+                    elif self.board[key].name.lower() == 'k':
+                        worth += self.board[key].worth * KING[x][y]
+                else:
+                    x, y = index_2d(LIST_BOARD, key)
+
+                    if self.board[key].name.lower() == 'p':
+                        worth += self.board[key].worth * PAWN[7-x][y]
+                    elif self.board[key].name.lower() == 'n':
+                        worth += self.board[key].worth * KNIGHT[7-x][y]
+                    elif self.board[key].name.lower() == 'b':
+                        worth += self.board[key].worth * BISHOP[7-x][y]
+                    elif self.board[key].name.lower() == 'r':
+                        worth += self.board[key].worth * ROOK[7-x][y]
+                    elif self.board[key].name.lower() == 'q':
+                        worth += self.board[key].worth * QUEEN[7-x][y]
+                    elif self.board[key].name.lower() == 'k':
+                        worth += self.board[key].worth * KING[7-x][y]
+
+        repititions = len(self.moves_log) - len(set(self.moves_log))
+        for move1 in (self.moves_log):
+            for move2 in (self.reverse_moves_log):
+                if move1 == move2:
+                    repititions += 1
+
+        worth -= repititions * 3
         return worth
 
     def push(self, new_move):
-        print("Pushing ", new_move)
+        # print("Pushing ", new_move)
         new_position = new_move[2:]
         old_position = new_move[:2]
 
         # Save the overwritten and overwrite pieces for pop
-        self.over_written = self.board[new_position]
-        self.over_writer = self.board[old_position]
-        self.last_move = new_move
+        self.over_written.append(self.board[new_position])
+        self.over_writer.append(self.board[old_position])
+        self.last_move.append(new_move)
 
         self.board[new_position] = self.board[old_position]
         self.board[new_position].position = new_position
         if '1' in new_position and self.board[new_position].name == 'P':
-            self.promote(new_position)
+            self.board[new_position] = Queen(
+                'Q', new_position, self.turn, 9)
         elif '8' in new_position and self.board[new_position].name == 'p':
-            self.promote(new_position)
+            self.board[new_position] = Queen(
+                'q', new_position, self.turn, 9)
 
         # SET THE OLD POSITION OF THIS PIECE TO EMPTY
         self.board[old_position] = 'E'
@@ -572,15 +618,29 @@ class Board:
 
         name = self.board[new_position].name
         # self.history[name].append(name + '-' + new_move)
+        self.moves_log.append(new_move)
+        self.reverse_moves_log.append(new_move[2:] + new_move[:2])
 
     def pop(self):
-        print("Popping ", self.last_move)
-        self.board[self.last_move[:2]] = self.over_writer
-        self.board[self.last_move[2:]] = self.over_written
+        # print("Popping ", self.last_move[-1])
 
-        self.over_writer = None
-        self.over_written = None
-        self.last_move = ''
+        # print(self.board[self.last_move[-1][:2]])
+        # print(self.board[self.last_move[-1][2:]].position)
+        self.board[self.last_move[-1][:2]] = self.over_writer[-1]
+        self.board[self.last_move[-1][2:]] = self.over_written[-1]
+        self.board[self.last_move[-1][:2]].position = self.last_move[-1][:2]
+        if self.board[self.last_move[-1][2:]] != 'E':
+            self.board[self.last_move[-1][2:]
+                       ].position = self.last_move[-1][2:]
+
+        # print(self.board[self.last_move[-1][:2]].position)
+        # print(self.board[self.last_move[-1][2:]])
+
+        self.over_writer.pop()
+        self.over_written.pop()
+        self.last_move.pop()
+
+        self.moves_log.pop()
         if self.turn == "White":
             self.turn = "Black"
         else:
