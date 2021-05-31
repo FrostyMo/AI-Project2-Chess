@@ -30,12 +30,18 @@ def index_2d(myList, v):
 
 
 class Player:
-    def __init__(self, name, position, color, worth):
+
+    def __init__(self, name, position, color, worth,DefendedValue=0,AttackedValue=0):
+
         self.name = name
         self.position = position
         self.moves = []
         self.color = color
         self.worth = worth
+
+        self.DefendedValue = 0
+        self.AttackedValue = 0
+
 
     def __str__(self):
         return self.name
@@ -59,7 +65,7 @@ class Player:
     #     BOARD[new_move[:2]] = 'E'
     #     return BOARD
 
-
+       
 class Pawn(Player):
 
     def __str__(self):
@@ -338,13 +344,12 @@ class Board:
                 if (len(moves) > 0):
                     moves_list.append(moves)
         x = [j for sub in moves_list for j in sub]
-#
-#   P K q
-#   b
-#
-#
 
         # if self.check is True:
+        s = self.is_Stalemate()
+        if s==True:
+            print("It's a draw!")
+
         y = self.is_CheckMate(x)
         if len(y) == 0:
             self.check_Mate = True
@@ -461,6 +466,110 @@ class Board:
             self.board[new_position] = Bishop(
                 promotion, new_position, self.turn, 3)
 
+    def CalculatePieceActionValue(self,pieceType):
+        if  pieceType=='P' or pieceType=='p':
+            return 6
+        elif pieceType=='N' or pieceType=='n':
+            return 3
+        elif pieceType=='B' or pieceType=='b':
+            return 3
+        elif pieceType=='R' or pieceType=='r':
+            return 2
+        elif pieceType=='Q' or pieceType=='q':
+            return 1
+        elif pieceType=='K' or pieceType=='k':
+            return 1
+    def count_attacks(self,moves,board,latest_pos):
+        count_attacks=0
+        attacked = False
+        for move in moves:
+            new_position = move[2:]
+            old_position = move[:2]
+            if board[new_position]!='E':
+                count_attacks+=1
+            if new_position==latest_pos:
+                attacked = True
+        return count_attacks,attacked
+    def enemy_Attacks(self,board):
+        enemy_moves = self.legal_moves_of(board)
+        enemy_attacks = []
+        count_attacks = 0
+        for move in enemy_moves:
+            new_position = move[2:]
+            old_position = move[:2]
+            if board[new_position]!='E':
+                count_attacks+=1
+                enemy_attacks.append(move)    
+
+        return enemy_attacks, count_attacks
+    def moves_to_be_safe(self):
+        lmoves = self.legal_moves()
+        safe_moves = []
+        count = 0
+        enemy_attacks,ecount = self.enemy_Attacks(self.board)
+        for emoves in enemy_attacks:
+            enew_position = emoves[2:]
+            eold_position = emoves[:2]
+            for moves in lmoves:
+                new_position = moves[2:]
+                old_position = moves[:2]
+                if enew_position==old_position:
+                    
+                    if self.board[old_position]!='E':
+                        # print("some piece is under attack")
+                        # print("NAME ",self.board[old_position].name)
+                        self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+                        safe_moves.append(moves)
+                        count+=1
+        return count, safe_moves
+    def moves_to_attack(self):
+        legalmoves = self.legal_moves()
+        for moves in legalmoves:
+            new_position = moves[2:]
+            old_position = moves[:2]
+            if self.board[new_position]!='E' and self.board[old_position]!='E':
+                 self.board[old_position].AttackedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+    
+    def Defending_pieces(self):
+        board_copy = self.board
+        legalmoves = self.legal_moves()
+        enemy_attacks,ecount = self.enemy_Attacks(self.board)
+        for move in legalmoves:
+            new_position = move[2:]
+            old_position = move[:2]
+
+            temp_piece = self.board[new_position]
+            self.board[new_position] = self.board[old_position]
+            self.board[new_position].position = new_position
+            self.board[old_position] = 'E' 
+            enemy_attacks2,ecount2 = self.enemy_Attacks(self.board)
+            if ecount2>ecount:
+                if self.board[old_position]!='E':
+                    self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+            self.board[old_position] = self.board[new_position]
+            self.board[old_position].position = old_position
+            self.board[new_position] = temp_piece
+
+    # def is_Attacking(self, moves):
+    #     board_copy = self.board
+    #     count_attacks=0
+    #     attackmoves_list = []
+    #     new_moves = []
+    #     score = 0
+    #     for move in moves:
+    #         new_position = move[2:]
+    #         old_position = move[:2]
+    #         if self.board[new_position]!='E':
+    #             count_attacks+=1
+    #             attackmoves_list.append(move)
+    #         temp_piece = board_copy[new_position]
+    #         board_copy[new_position] = board_copy[old_position]
+    #         board_copy[new_position].position = new_position
+    #         board_copy[old_position] = 'E'
+    #         new_moves = self.legal_moves_of(board_copy)
+    #         num_attacks,is_attacked = self.count_attacks(new_moves,board_copy,new_position)
+
+
     def is_CheckMate(self, moves):
         # print(moves)
         board_copy = self.board
@@ -514,6 +623,14 @@ class Board:
             if king_position == move[2:]:
                 self.check = True
 
+
+    def is_Stalemate(self):
+        if self.is_Check_of(self.board)==True:
+            moves = self.legal_moves()
+            if(len(moves)==0):
+                return True      
+        return False
+
     def move_From(self, new_move):
         # SET THE NEW POSITION OF THIS PIECE TO LATTER HALF OF THE new_move
         new_position = new_move[2:]
@@ -548,6 +665,9 @@ class Board:
         # for key in self.board:
         #     if self.board[key] != 'E' and self.board[key].color != self.turn:
         #         worth -= self.board[key].worth
+
+        scoredefend=0
+        scoreattack = 0
 
         for key in self.board:
             if self.board[key] != 'E' and self.board[key].color == self.turn:
@@ -586,8 +706,21 @@ class Board:
             for move2 in (self.reverse_moves_log):
                 if move1 == move2:
                     repititions += 1
+                    
+        safe_moves = []
+        self.moves_to_attack()
+        count, safe_moves = self.moves_to_be_safe()
+        self.Defending_pieces()
+        for key in self.board:
+            if self.board[key] != 'E':
+                scoredefend+=self.board[key].DefendedValue
+                scoreattack+= self.board[key].AttackedValue
+        
+        worth -= repititions * 4
 
-        worth -= repititions * 3
+        worth += scoredefend
+        worth -= scoreattack
+
         return worth
 
     def push(self, new_move):
