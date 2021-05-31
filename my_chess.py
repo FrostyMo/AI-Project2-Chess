@@ -30,14 +30,18 @@ def index_2d(myList, v):
 
 
 class Player:
+
     def __init__(self, name, position, color, worth,DefendedValue=0,AttackedValue=0):
+
         self.name = name
         self.position = position
         self.moves = []
         self.color = color
         self.worth = worth
+
         self.DefendedValue = 0
         self.AttackedValue = 0
+
 
     def __str__(self):
         return self.name
@@ -61,9 +65,7 @@ class Player:
     #     BOARD[new_move[:2]] = 'E'
     #     return BOARD
 
-        
-
-
+       
 class Pawn(Player):
 
     def __str__(self):
@@ -347,6 +349,7 @@ class Board:
         s = self.is_Stalemate()
         if s==True:
             print("It's a draw!")
+
         y = self.is_CheckMate(x)
         if len(y) == 0:
             self.check_Mate = True
@@ -462,6 +465,7 @@ class Board:
         elif promotion in ['B', 'b']:
             self.board[new_position] = Bishop(
                 promotion, new_position, self.turn, 3)
+
     def CalculatePieceActionValue(self,pieceType):
         if  pieceType=='P' or pieceType=='p':
             return 6
@@ -566,8 +570,6 @@ class Board:
     #         num_attacks,is_attacked = self.count_attacks(new_moves,board_copy,new_position)
 
 
-
-
     def is_CheckMate(self, moves):
         # print(moves)
         board_copy = self.board
@@ -621,6 +623,7 @@ class Board:
             if king_position == move[2:]:
                 self.check = True
 
+
     def is_Stalemate(self):
         if self.is_Check_of(self.board)==True:
             moves = self.legal_moves()
@@ -662,8 +665,10 @@ class Board:
         # for key in self.board:
         #     if self.board[key] != 'E' and self.board[key].color != self.turn:
         #         worth -= self.board[key].worth
+
         scoredefend=0
         scoreattack = 0
+
         for key in self.board:
             if self.board[key] != 'E' and self.board[key].color == self.turn:
                 if self.board[key].color == 'White':
@@ -701,6 +706,7 @@ class Board:
             for move2 in (self.reverse_moves_log):
                 if move1 == move2:
                     repititions += 1
+                    
         safe_moves = []
         self.moves_to_attack()
         count, safe_moves = self.moves_to_be_safe()
@@ -714,6 +720,7 @@ class Board:
 
         worth += scoredefend
         worth -= scoreattack
+
         return worth
 
     def push(self, new_move):
