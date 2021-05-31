@@ -36,8 +36,8 @@ class Player:
         self.moves = []
         self.color = color
         self.worth = worth
-        self.DefendedValue = DefendedValue
-        self.AttackedValue = AttackedValue
+        self.DefendedValue = 0
+        self.AttackedValue = 0
 
     def __str__(self):
         return self.name
@@ -60,20 +60,7 @@ class Player:
     #     # SET THE OLD POSITION OF THIS PIECE TO EMPTY
     #     BOARD[new_move[:2]] = 'E'
     #     return BOARD
-def CalculatePieceActionValue( pieceType):
 
-    if  pieceType=='P' or pieceType=='p':
-            return 6; 
-    elif pieceType=='K' or pieceType=='k':
-            return 3
-    elif pieceType=='B' or pieceType=='b':
-            return 3
-    elif pieceType=='R' or pieceType=='r':
-            return 2
-    elif pieceType=='Q' or pieceType=='q':
-            return 1
-    elif pieceType=='K' or pieceType=='k':
-            return 1
         
 
 
@@ -472,6 +459,19 @@ class Board:
         elif promotion in ['B', 'b']:
             self.board[new_position] = Bishop(
                 promotion, new_position, self.turn, 3)
+    def CalculatePieceActionValue(self,pieceType):
+        if  pieceType=='P' or pieceType=='p':
+            return 6
+        elif pieceType=='N' or pieceType=='n':
+            return 3
+        elif pieceType=='B' or pieceType=='b':
+            return 3
+        elif pieceType=='R' or pieceType=='r':
+            return 2
+        elif pieceType=='Q' or pieceType=='q':
+            return 1
+        elif pieceType=='K' or pieceType=='k':
+            return 1
     def count_attacks(self,moves,board,latest_pos):
         count_attacks=0
         attacked = False
@@ -483,24 +483,23 @@ class Board:
             if new_position==latest_pos:
                 attacked = True
         return count_attacks,attacked
-    def enemy_Attacks(self):
-        enemy_moves = self.legal_moves_of(self.board)
+    def enemy_Attacks(self,board):
+        enemy_moves = self.legal_moves_of(board)
         enemy_attacks = []
         count_attacks = 0
         for move in enemy_moves:
             new_position = move[2:]
             old_position = move[:2]
-            if self.board[new_position]!='E':
-                print("attacked")
+            if board[new_position]!='E':
                 count_attacks+=1
                 enemy_attacks.append(move)    
 
-        return enemy_attacks
-    def moves_tobe_safe(self):
-        lmoves = self.legal_moves(self.board)
+        return enemy_attacks, count_attacks
+    def moves_to_be_safe(self):
+        lmoves = self.legal_moves()
         safe_moves = []
         count = 0
-        enemy_attacks = self.enemy_Attacks()
+        enemy_attacks,ecount = self.enemy_Attacks(self.board)
         for emoves in enemy_attacks:
             enew_position = emoves[2:]
             eold_position = emoves[:2]
@@ -508,19 +507,41 @@ class Board:
                 new_position = moves[2:]
                 old_position = moves[:2]
                 if enew_position==old_position:
-                    print("some piece is under attack")
-                    self.board[old_position].DefendedValue+=CalculatePieceActionValue(self.board[old_position].name)
-                    safe_moves.append(moves)
-                    count+=1
+                    
+                    if self.board[old_position]!='E':
+                        # print("some piece is under attack")
+                        # print("NAME ",self.board[old_position].name)
+                        self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+                        safe_moves.append(moves)
+                        count+=1
         return count, safe_moves
     def moves_to_attack(self):
-        legalmoves = self.legal_moves(self.board)
+        legalmoves = self.legal_moves()
         for moves in legalmoves:
             new_position = moves[2:]
             old_position = moves[:2]
-            if self.board[new_position]!='E':
-                 self.board[old_position].AttackedValue+=CalculatePieceActionValue(self.board[old_position].name)
+            if self.board[new_position]!='E' and self.board[old_position]!='E':
+                 self.board[old_position].AttackedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
     
+    def Defending_pieces(self):
+        board_copy = self.board
+        legalmoves = self.legal_moves()
+        enemy_attacks,ecount = self.enemy_Attacks(self.board)
+        for move in legalmoves:
+            new_position = move[2:]
+            old_position = move[:2]
+
+            temp_piece = self.board[new_position]
+            self.board[new_position] = self.board[old_position]
+            self.board[new_position].position = new_position
+            self.board[old_position] = 'E' 
+            enemy_attacks2,ecount2 = self.enemy_Attacks(self.board)
+            if ecount2>ecount:
+                if self.board[old_position]!='E':
+                    self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+            self.board[old_position] = self.board[new_position]
+            self.board[old_position].position = old_position
+            self.board[new_position] = temp_piece
 
     # def is_Attacking(self, moves):
     #     board_copy = self.board
@@ -670,14 +691,18 @@ class Board:
             for move2 in (self.reverse_moves_log):
                 if move1 == move2:
                     repititions += 1
+        safe_moves = []
+        self.moves_to_attack()
+        count, safe_moves = self.moves_to_be_safe()
+        self.Defending_pieces()
         for key in self.board:
             if self.board[key] != 'E':
                 scoredefend+=self.board[key].DefendedValue
                 scoreattack+= self.board[key].AttackedValue
         
-        worth -= repititions * 3
-        worth += scoredefend *3
-        worth -= scoreattack *3
+        worth -= repititions * 4
+        worth += scoredefend
+        worth -= scoreattack
         return worth
 
     def push(self, new_move):

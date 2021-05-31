@@ -97,7 +97,9 @@ def main():
         b1.print_ChessBoard()
         eval, b1 = minimax(b1, 3, -math.inf, +math.inf, False, i+1)
         b1.print_ChessBoard()
-
+    # b1.print_ChessBoard()
+    # m=b.CalculatePieceActionValue('P')
+    # print(m)
     print(b1.moves_log)
 
 
