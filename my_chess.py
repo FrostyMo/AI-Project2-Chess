@@ -346,14 +346,16 @@ class Board:
         x = [j for sub in moves_list for j in sub]
 
         # if self.check is True:
-        s = self.is_Stalemate()
-        if s==True:
-            print("It's a draw!")
+        
+        
 
         y = self.is_CheckMate(x)
         if len(y) == 0:
             self.check_Mate = True
         # self.check = False
+        s = self.is_Stalemate(y)
+        if s==True:
+            print("It's a draw!")
         return y
 
         # return x
@@ -624,9 +626,9 @@ class Board:
                 self.check = True
 
 
-    def is_Stalemate(self):
+    def is_Stalemate(self,moves):
         if self.is_Check_of(self.board)==True:
-            moves = self.legal_moves()
+            #moves = self.legal_moves()
             if(len(moves)==0):
                 return True      
         return False
