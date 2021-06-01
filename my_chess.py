@@ -545,9 +545,9 @@ class Board:
             self.board[new_position].position = new_position
             self.board[old_position] = 'E' 
             enemy_attacks2,ecount2 = self.enemy_Attacks(self.board)
-            if ecount2>ecount:
+            if ecount2<ecount:
                 if self.board[old_position]!='E':
-                    self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+                    self.board[new_position].DefendedValue+=self.CalculatePieceActionValue(self.board[new_position].name)
             self.board[old_position] = self.board[new_position]
             self.board[old_position].position = old_position
             self.board[new_position] = temp_piece
