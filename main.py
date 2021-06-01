@@ -84,18 +84,18 @@ def main():
     for i in range(30):
         eval, b1 = minimax(b1, 3, -math.inf, +math.inf, True, i+1)
         # board_copy.print_ChessBoard()
-        # b1.print_ChessBoard()
-        # moves = b1.legal_moves()
-        # print(moves)
-        # while True:
-        #     new_move = input("Please enter your move (e.g a2a4): ")
-        #     if new_move in moves:
-        #         b1.move_From(new_move)
-        #         break
-        #     else:
-        #         print("Invalid Move entered, please enter again!")
         b1.print_ChessBoard()
-        eval, b1 = minimax(b1, 3, -math.inf, +math.inf, False, i+1)
+        moves = b1.legal_moves()
+        # print(moves)
+        while True:
+            new_move = input("Please enter your move (e.g a2a4): ")
+            if new_move in moves:
+                b1.move_From(new_move)
+                break
+            else:
+                print("I   nvalid Move entered, please enter again!")
+        #b1.print_ChessBoard()
+        #eval, b1 = minimax(b1, 3, -math.inf, +math.inf, False, i+1)
         b1.print_ChessBoard()
 
     # b1.print_ChessBoard()
