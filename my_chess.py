@@ -31,7 +31,7 @@ def index_2d(myList, v):
 
 class Player:
 
-    def __init__(self, name, position, color, worth,DefendedValue=0,AttackedValue=0):
+    def __init__(self, name, position, color, worth, DefendedValue=0, AttackedValue=0):
 
         self.name = name
         self.position = position
@@ -41,7 +41,6 @@ class Player:
 
         self.DefendedValue = 0
         self.AttackedValue = 0
-
 
     def __str__(self):
         return self.name
@@ -65,7 +64,7 @@ class Player:
     #     BOARD[new_move[:2]] = 'E'
     #     return BOARD
 
-       
+
 class Pawn(Player):
 
     def __str__(self):
@@ -314,6 +313,13 @@ class Board:
         self.last_move = []
         self.moves_log = []
         self.reverse_moves_log = []
+        self.pawn_worth = 100
+        self.knight_worth = 320
+        self.bishop_worth = 330
+        self.rook_worth = 500
+        self.queen_worth = 900
+        self.king_worth = 10000
+        self.stale_mate = False
 
     def legal_moves_of(self, board):
         global LIST_BOARD
@@ -346,15 +352,14 @@ class Board:
         x = [j for sub in moves_list for j in sub]
 
         # if self.check is True:
-        
-        
 
         y = self.is_CheckMate(x)
         if len(y) == 0:
             self.check_Mate = True
         # self.check = False
         s = self.is_Stalemate(y)
-        if s==True:
+        if s == True:
+            self.stale_mate = True
             print("It's a draw!")
         return y
 
@@ -468,74 +473,80 @@ class Board:
             self.board[new_position] = Bishop(
                 promotion, new_position, self.turn, 3)
 
-    def CalculatePieceActionValue(self,pieceType):
-        if  pieceType=='P' or pieceType=='p':
+    def CalculatePieceActionValue(self, pieceType):
+        if pieceType == 'P' or pieceType == 'p':
             return 6
-        elif pieceType=='N' or pieceType=='n':
+        elif pieceType == 'N' or pieceType == 'n':
             return 3
-        elif pieceType=='B' or pieceType=='b':
+        elif pieceType == 'B' or pieceType == 'b':
             return 3
-        elif pieceType=='R' or pieceType=='r':
+        elif pieceType == 'R' or pieceType == 'r':
             return 2
-        elif pieceType=='Q' or pieceType=='q':
+        elif pieceType == 'Q' or pieceType == 'q':
             return 1
-        elif pieceType=='K' or pieceType=='k':
+        elif pieceType == 'K' or pieceType == 'k':
             return 1
-    def count_attacks(self,moves,board,latest_pos):
-        count_attacks=0
+
+    def count_attacks(self, moves, board, latest_pos):
+        count_attacks = 0
         attacked = False
         for move in moves:
             new_position = move[2:]
             old_position = move[:2]
-            if board[new_position]!='E':
-                count_attacks+=1
-            if new_position==latest_pos:
+            if board[new_position] != 'E':
+                count_attacks += 1
+            if new_position == latest_pos:
                 attacked = True
-        return count_attacks,attacked
-    def enemy_Attacks(self,board):
+        return count_attacks, attacked
+
+    def enemy_Attacks(self, board):
         enemy_moves = self.legal_moves_of(board)
         enemy_attacks = []
         count_attacks = 0
         for move in enemy_moves:
             new_position = move[2:]
             old_position = move[:2]
-            if board[new_position]!='E':
-                count_attacks+=1
-                enemy_attacks.append(move)    
+            if board[new_position] != 'E':
+                count_attacks += 1
+                enemy_attacks.append(move)
 
         return enemy_attacks, count_attacks
+
     def moves_to_be_safe(self):
         lmoves = self.legal_moves()
         safe_moves = []
         count = 0
-        enemy_attacks,ecount = self.enemy_Attacks(self.board)
+        enemy_attacks, ecount = self.enemy_Attacks(self.board)
         for emoves in enemy_attacks:
             enew_position = emoves[2:]
             eold_position = emoves[:2]
             for moves in lmoves:
                 new_position = moves[2:]
                 old_position = moves[:2]
-                if enew_position==old_position:
-                    
-                    if self.board[old_position]!='E':
+                if enew_position == old_position:
+
+                    if self.board[old_position] != 'E':
                         # print("some piece is under attack")
                         # print("NAME ",self.board[old_position].name)
-                        self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+                        self.board[old_position].DefendedValue += self.CalculatePieceActionValue(
+                            self.board[old_position].name)
                         safe_moves.append(moves)
-                        count+=1
+                        count += 1
         return count, safe_moves
+
     def moves_to_attack(self):
         legalmoves = self.legal_moves()
         for moves in legalmoves:
             new_position = moves[2:]
             old_position = moves[:2]
-            if self.board[new_position]!='E' and self.board[old_position]!='E':
-                 self.board[old_position].AttackedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
-    
+            if self.board[new_position] != 'E':
+                self.board[old_position].AttackedValue += self.CalculatePieceActionValue(
+                    self.board[old_position].name)
+
     def Defending_pieces(self):
         board_copy = self.board
         legalmoves = self.legal_moves()
-        enemy_attacks,ecount = self.enemy_Attacks(self.board)
+        enemy_attacks, ecount = self.enemy_Attacks(self.board)
         for move in legalmoves:
             new_position = move[2:]
             old_position = move[:2]
@@ -543,34 +554,15 @@ class Board:
             temp_piece = self.board[new_position]
             self.board[new_position] = self.board[old_position]
             self.board[new_position].position = new_position
-            self.board[old_position] = 'E' 
-            enemy_attacks2,ecount2 = self.enemy_Attacks(self.board)
-            if ecount2>ecount:
-                if self.board[old_position]!='E':
-                    self.board[old_position].DefendedValue+=self.CalculatePieceActionValue(self.board[old_position].name)
+            self.board[old_position] = 'E'
+            enemy_attacks2, ecount2 = self.enemy_Attacks(self.board)
+            if ecount2 < ecount:
+                if self.board[new_position] != 'E':
+                    self.board[new_position].DefendedValue += self.CalculatePieceActionValue(
+                        self.board[new_position].name)
             self.board[old_position] = self.board[new_position]
             self.board[old_position].position = old_position
             self.board[new_position] = temp_piece
-
-    # def is_Attacking(self, moves):
-    #     board_copy = self.board
-    #     count_attacks=0
-    #     attackmoves_list = []
-    #     new_moves = []
-    #     score = 0
-    #     for move in moves:
-    #         new_position = move[2:]
-    #         old_position = move[:2]
-    #         if self.board[new_position]!='E':
-    #             count_attacks+=1
-    #             attackmoves_list.append(move)
-    #         temp_piece = board_copy[new_position]
-    #         board_copy[new_position] = board_copy[old_position]
-    #         board_copy[new_position].position = new_position
-    #         board_copy[old_position] = 'E'
-    #         new_moves = self.legal_moves_of(board_copy)
-    #         num_attacks,is_attacked = self.count_attacks(new_moves,board_copy,new_position)
-
 
     def is_CheckMate(self, moves):
         # print(moves)
@@ -625,12 +617,10 @@ class Board:
             if king_position == move[2:]:
                 self.check = True
 
-
-    def is_Stalemate(self,moves):
-        if self.is_Check_of(self.board)==True:
-            #moves = self.legal_moves()
-            if(len(moves)==0):
-                return True      
+    def is_Stalemate(self, moves):
+        if self.is_Check_of(self.board) == False:
+            if(len(moves) == 0):
+                return True
         return False
 
     def move_From(self, new_move):
@@ -660,70 +650,155 @@ class Board:
         name = self.board[new_position].name
         self.history[name].append(name + '-' + new_move)
 
+    def material_Worth(self):
+        bp = wp = bb = wb = bn = wn = bq = wq = br = wr = bk = wk = 0
+        for key in self.board:
+            if self.board[key] != 'E':
+                if self.board[key].name == 'p':
+                    wp += 1
+                elif self.board[key].name == 'P':
+                    bp += 1
+                elif self.board[key].name == 'b':
+                    wb += 1
+                elif self.board[key].name == 'B':
+                    bb += 1
+                elif self.board[key].name == 'n':
+                    wn += 1
+                elif self.board[key].name == 'N':
+                    bn += 1
+                elif self.board[key].name == 'q':
+                    wq += 1
+                elif self.board[key].name == 'Q':
+                    bq += 1
+                elif self.board[key].name == 'r':
+                    wr += 1
+                elif self.board[key].name == 'R':
+                    br += 1
+                elif self.board[key].name == 'k':
+                    wp += 1
+                elif self.board[key].name == 'K':
+                    bp += 1
+        material_worth = self.pawn_worth * (wp-bp)
+        material_worth += self.knight_worth * (wn-bn)
+        material_worth += self.bishop_worth * (wb-bb)
+        material_worth += self.rook_worth * (wr-br)
+        material_worth += self.queen_worth * (wq-bq)
+        material_worth += self.king_worth * (wk-bk)
+
+        return material_worth
+
+    def individual_Worth(self):
+        worth = 0
+        for key in self.board:
+            if self.board[key] != 'E':
+                if self.board[key].color == 'White':
+                    x, y = index_2d(LIST_BOARD, key)
+                    if self.board[key].name.lower() == 'p':
+                        worth += PAWN[x][y]
+                    elif self.board[key].name.lower() == 'n':
+                        worth += KNIGHT[x][y]
+                    elif self.board[key].name.lower() == 'b':
+                        worth += BISHOP[x][y]
+                    elif self.board[key].name.lower() == 'r':
+                        worth += ROOK[x][y]
+                    elif self.board[key].name.lower() == 'q':
+                        worth += QUEEN[x][y]
+                    elif self.board[key].name.lower() == 'k':
+                        worth += KING[x][y]
+                else:
+                    x, y = index_2d(LIST_BOARD, key)
+
+                    if self.board[key].name.lower() == 'p':
+                        worth += (- PAWN[7-x][y])
+                    elif self.board[key].name.lower() == 'n':
+                        worth += (- KNIGHT[7-x][y])
+                    elif self.board[key].name.lower() == 'b':
+                        worth += (- BISHOP[7-x][y])
+                    elif self.board[key].name.lower() == 'r':
+                        worth += (- ROOK[7-x][y])
+                    elif self.board[key].name.lower() == 'q':
+                        worth += (- QUEEN[7-x][y])
+                    elif self.board[key].name.lower() == 'k':
+                        worth += (- KING[7-x][y])
+        return worth
+
     # Greater the worth of the board, less likely to be selected in minmax
     # So choose minimum worth
+
     def calculate_Board_Worth(self):
         worth = 0
         # for key in self.board:
         #     if self.board[key] != 'E' and self.board[key].color != self.turn:
         #         worth -= self.board[key].worth
+        material_worth = self.material_Worth()
 
-        scoredefend=0
+        scoredefend = 0
         scoreattack = 0
 
-        for key in self.board:
-            if self.board[key] != 'E' and self.board[key].color == self.turn:
-                if self.board[key].color == 'White':
-                    x, y = index_2d(LIST_BOARD, key)
-                    if self.board[key].name.lower() == 'p':
-                        worth += self.board[key].worth * PAWN[x][y]
-                    elif self.board[key].name.lower() == 'n':
-                        worth += self.board[key].worth * KNIGHT[x][y]
-                    elif self.board[key].name.lower() == 'b':
-                        worth += self.board[key].worth * BISHOP[x][y]
-                    elif self.board[key].name.lower() == 'r':
-                        worth += self.board[key].worth * ROOK[x][y]
-                    elif self.board[key].name.lower() == 'q':
-                        worth += self.board[key].worth * QUEEN[x][y]
-                    elif self.board[key].name.lower() == 'k':
-                        worth += self.board[key].worth * KING[x][y]
-                else:
-                    x, y = index_2d(LIST_BOARD, key)
+        # for key in self.board:
+        #     if self.board[key] != 'E' and self.board[key].color == self.turn:
+        #         if self.board[key].color == 'White':
+        #             x, y = index_2d(LIST_BOARD, key)
+        #             if self.board[key].name.lower() == 'p':
+        #                 worth += self.board[key].worth * PAWN[x][y]
+        #             elif self.board[key].name.lower() == 'n':
+        #                 worth += self.board[key].worth * KNIGHT[x][y]
+        #             elif self.board[key].name.lower() == 'b':
+        #                 worth += self.board[key].worth * BISHOP[x][y]
+        #             elif self.board[key].name.lower() == 'r':
+        #                 worth += self.board[key].worth * ROOK[x][y]
+        #             elif self.board[key].name.lower() == 'q':
+        #                 worth += self.board[key].worth * QUEEN[x][y]
+        #             elif self.board[key].name.lower() == 'k':
+        #                 worth += self.board[key].worth * KING[x][y]
+        #         else:
+        #             x, y = index_2d(LIST_BOARD, key)
 
-                    if self.board[key].name.lower() == 'p':
-                        worth += self.board[key].worth * PAWN[7-x][y]
-                    elif self.board[key].name.lower() == 'n':
-                        worth += self.board[key].worth * KNIGHT[7-x][y]
-                    elif self.board[key].name.lower() == 'b':
-                        worth += self.board[key].worth * BISHOP[7-x][y]
-                    elif self.board[key].name.lower() == 'r':
-                        worth += self.board[key].worth * ROOK[7-x][y]
-                    elif self.board[key].name.lower() == 'q':
-                        worth += self.board[key].worth * QUEEN[7-x][y]
-                    elif self.board[key].name.lower() == 'k':
-                        worth += self.board[key].worth * KING[7-x][y]
-
+        #             if self.board[key].name.lower() == 'p':
+        #                 worth += self.board[key].worth * (- PAWN[7-x][y])
+        #             elif self.board[key].name.lower() == 'n':
+        #                 worth += self.board[key].worth * (- KNIGHT[7-x][y])
+        #             elif self.board[key].name.lower() == 'b':
+        #                 worth += self.board[key].worth * (- BISHOP[7-x][y])
+        #             elif self.board[key].name.lower() == 'r':
+        #                 worth += self.board[key].worth * (- ROOK[7-x][y])
+        #             elif self.board[key].name.lower() == 'q':
+        #                 worth += self.board[key].worth * (- QUEEN[7-x][y])
+        #             elif self.board[key].name.lower() == 'k':
+        #                 worth += self.board[key].worth * (- KING[7-x][y])
+        indv_worth = self.individual_Worth()
+        worth += indv_worth
+        worth += material_worth
         repititions = len(self.moves_log) - len(set(self.moves_log))
         for move1 in (self.moves_log):
             for move2 in (self.reverse_moves_log):
                 if move1 == move2:
                     repititions += 1
-                    
+
         safe_moves = []
-        self.moves_to_attack()
-        count, safe_moves = self.moves_to_be_safe()
-        self.Defending_pieces()
-        for key in self.board:
-            if self.board[key] != 'E':
-                scoredefend+=self.board[key].DefendedValue
-                scoreattack+= self.board[key].AttackedValue
-        
-        worth -= repititions * 8
+        # self.moves_to_attack()
+        # count, safe_moves = self.moves_to_be_safe()
+        # self.Defending_pieces()
+        # for key in self.board:
+        #     if self.board[key] != 'E':
+        #         scoredefend += self.board[key].DefendedValue
+        #         scoreattack += self.board[key].AttackedValue
 
-        worth += scoredefend
-        worth -= scoreattack
+        worth -= repititions * 4
 
+        #worth += scoredefend
+        #worth += scoreattack
+
+        if self.turn == "Black":
+            worth *= -1
         return worth
+
+    def is_capture(self, new_move):
+        new_position = new_move[2:]
+
+        if self.board[new_position] != 'E':
+            return True
+        return False
 
     def push(self, new_move):
         # print("Pushing ", new_move)
@@ -774,7 +849,8 @@ class Board:
         self.over_writer.pop()
         self.over_written.pop()
         self.last_move.pop()
-
+        self.check_Mate = False
+        self.check_Mate = False
         self.moves_log.pop()
         if self.turn == "White":
             self.turn = "Black"
