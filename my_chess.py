@@ -718,7 +718,7 @@ class Board:
                 scoredefend+=self.board[key].DefendedValue
                 scoreattack+= self.board[key].AttackedValue
         
-        worth -= repititions * 4
+        worth -= repititions * 8
 
         worth += scoredefend
         worth -= scoreattack
