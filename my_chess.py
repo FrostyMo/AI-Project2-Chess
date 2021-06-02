@@ -38,7 +38,7 @@ class Player:
         self.moves = []
         self.color = color
         self.worth = worth
-
+        self.has_moved = False
         self.DefendedValue = 0
         self.AttackedValue = 0
 
@@ -55,14 +55,6 @@ class Player:
 
     def moves_Available(self, list_board, board, turn):
         print("Im just a nameless player")
-
-    # def movefrom(self, new_move, BOARD):
-    #     # SET THE NEW POSITION OF THIS PIECE TO LATTER HALF OF THE new_move
-    #     self.position = new_move[2:]
-    #     BOARD[new_move[2:]] = self
-    #     # SET THE OLD POSITION OF THIS PIECE TO EMPTY
-    #     BOARD[new_move[:2]] = 'E'
-    #     return BOARD
 
 
 class Pawn(Player):
@@ -191,6 +183,9 @@ class Bishop(Player):
 
 class Rook(Player):
 
+    # def __init__(self, has_moved=False):
+    #     self.has_moved = has_moved
+
     def __str__(self):
         return self.name
 
@@ -264,10 +259,15 @@ class Queen(Player):
 
 class King(Player):
 
+    # def __init__(self, has_moved=False):
+    #     self.has_moved = has_moved
+
     def __str__(self):
         return self.name
 
     def moves_Available(self, list_board, board, turn):
+        if self.position not in ['e1', 'e8']:
+            self.has_moved = True
        # if self.color == turn:
         self.moves.clear()
         x, y = index_2d(list_board, self.position)
@@ -295,6 +295,56 @@ class King(Player):
                 else:
                     Append(dx, dy)
 
+        if self.has_moved == False:
+            if self.color == 'White':
+                rook1 = list_board[7][0]
+                rook2 = list_board[7][7]
+                if board[rook1] != 'E':
+                    if board[rook1].name == 'r':
+                        if board[rook1].has_moved == False:
+                            can_castle = True
+                            for i in range(1, 4):
+                                if board[list_board[7][y-i]] != 'E':
+                                    can_castle = False
+                            if can_castle:
+                                self.moves.append("e1c1")
+                if board[rook2] != 'E':
+                    # print("Rook 2 found at ", rook2)
+                    if board[rook2].name == 'r':
+                        # print("r found")
+                        if board[rook2].has_moved == False:
+                            # print("Rook 2 hasnt moved")
+                            can_castle = True
+                            # print("y: ", y, end="  ")
+                            for i in range(1, 3):
+                                # print("Checking: ", list_board[7][y+i])
+                                if board[list_board[7][y+i]] != 'E':
+                                    can_castle = False
+                            if can_castle:
+                                self.moves.append("e1g1")
+
+            else:
+                rook1 = list_board[0][0]
+                rook2 = list_board[0][7]
+                if board[rook1] != 'E':
+                    if board[rook1].name == 'R':
+                        if board[rook1].has_moved == False:
+                            can_castle = True
+                            for i in range(1, 4):
+                                if board[list_board[0][y-i]] != 'E':
+                                    can_castle = False
+                            if can_castle:
+                                self.moves.append("e8c8")
+                if board[rook2] != 'E':
+                    if board[rook2].name == 'R':
+                        if board[rook2].has_moved == False:
+                            can_castle = True
+                            for i in range(1, 3):
+                                if board[list_board[0][y+i]] != 'E':
+                                    can_castle = False
+                            if can_castle:
+                                self.moves.append("e8g8")
+
 
 class Board:
 
@@ -320,6 +370,7 @@ class Board:
         self.queen_worth = 900
         self.king_worth = 10000
         self.stale_mate = False
+        self.named_move = []
 
     def legal_moves_of(self, board):
         global LIST_BOARD
@@ -550,7 +601,8 @@ class Board:
         for move in legalmoves:
             new_position = move[2:]
             old_position = move[:2]
-
+            if self.board[old_position].name in ['k', 'K']:
+                self.board[old_position].has_moved = True
             temp_piece = self.board[new_position]
             self.board[new_position] = self.board[old_position]
             self.board[new_position].position = new_position
@@ -563,6 +615,8 @@ class Board:
             self.board[old_position] = self.board[new_position]
             self.board[old_position].position = old_position
             self.board[new_position] = temp_piece
+            if self.board[old_position].name in ['k', 'K']:
+                self.board[old_position].has_moved = False
 
     def is_CheckMate(self, moves):
         # print(moves)
@@ -571,7 +625,8 @@ class Board:
         for move in moves:
             new_position = move[2:]
             old_position = move[:2]
-
+            if self.board[old_position].name in ['k', 'K']:
+                self.board[old_position].has_moved = True
             temp_piece = board_copy[new_position]
             board_copy[new_position] = board_copy[old_position]
             board_copy[new_position].position = new_position
@@ -583,7 +638,8 @@ class Board:
             board_copy[old_position] = board_copy[new_position]
             board_copy[old_position].position = old_position
             board_copy[new_position] = temp_piece
-
+            if self.board[old_position].name in ['k', 'K']:
+                self.board[old_position].has_moved = False
         return new_moves_list
 
     def is_Check_of(self, board):
@@ -624,31 +680,42 @@ class Board:
         return False
 
     def move_From(self, new_move):
+
         # SET THE NEW POSITION OF THIS PIECE TO LATTER HALF OF THE new_move
         new_position = new_move[2:]
         old_position = new_move[:2]
-        if (self.board[new_position] != 'E' and self.board[new_position].name in ['k', 'K']):
-            print("AAAAAAA YOU ARE WRONG")
-            self.check_Mate = True
-            return
-        self.board[new_position] = self.board[old_position]
-        self.board[new_position].position = new_position
 
-        if '1' in new_position and self.board[new_position].name == 'P':
-            self.promote(new_position)
-        elif '8' in new_position and self.board[new_position].name == 'p':
-            self.promote(new_position)
+        castle_bool = False
+        if new_move in ['e1g1', 'e8g8', 'e1c1', 'e8c8']:
+            if self.board[old_position].name in ['k', 'K']:
+                self.board[old_position].has_moved = True
+                self.castle(new_move)
+                castle_bool = True
 
-        # SET THE OLD POSITION OF THIS PIECE TO EMPTY
-        self.board[old_position] = 'E'
-        self.is_Check()
-        # FLIP TURN
-        if self.turn == "White":
-            self.turn = "Black"
-        else:
-            self.turn = "White"
-        name = self.board[new_position].name
-        self.history[name].append(name + '-' + new_move)
+        if castle_bool == False:
+            if (self.board[new_position] != 'E' and self.board[new_position].name in ['k', 'K']):
+                print("AAAAAAA YOU ARE WRONG")
+                self.check_Mate = True
+                return
+            self.board[new_position] = self.board[old_position]
+            self.board[new_position].position = new_position
+
+            if '1' in new_position and self.board[new_position].name == 'P':
+                self.promote(new_position)
+            elif '8' in new_position and self.board[new_position].name == 'p':
+                self.promote(new_position)
+
+            # SET THE OLD POSITION OF THIS PIECE TO EMPTY
+            self.board[old_position] = 'E'
+            # self.is_Check()
+            # FLIP TURN
+            if self.turn == "White":
+                self.turn = "Black"
+            else:
+                self.turn = "White"
+            name = self.board[new_position].name
+            self.history[name].append(name + '-' + new_move)
+            self.named_move.append(name+'-'+new_move)
 
     def material_Worth(self):
         bp = wp = bb = wb = bn = wn = bq = wq = br = wr = bk = wk = 0
@@ -800,10 +867,70 @@ class Board:
             return True
         return False
 
+    def castle(self, new_move):
+        xK, yK = index_2d(LIST_BOARD, new_move[:2])
+        if new_move in ['e1g1', 'e8g8']:
+            old_position = new_move[:2]
+            new_position = new_move[2:]
+            self.board[new_position] = self.board[old_position]
+            self.board[new_position].position = new_position
+            self.board[old_position] = 'E'
+
+            # King moved
+            name = self.board[new_position].name
+            self.history[name].append(name + '-' + new_move)
+
+            rook_position = 'h' + old_position[1]
+
+            rook_newposition = LIST_BOARD[xK][yK+1]
+
+            self.board[rook_newposition] = self.board[rook_position]
+            self.board[rook_newposition].position = rook_newposition
+            self.board[rook_position] = 'E'
+
+            # Rook moved
+            name = self.board[rook_newposition].name
+            self.history[name].append(
+                name + '-' + rook_position+rook_newposition)
+
+            if self.turn == "White":
+                self.turn = "Black"
+            else:
+                self.turn = "White"
+        elif new_move in ['e1c1', 'e8c8']:
+            old_position = new_move[:2]
+            new_position = new_move[2:]
+            self.board[new_position] = self.board[old_position]
+            self.board[new_position].position = new_position
+            self.board[old_position] = 'E'
+
+            # King moved
+            name = self.board[new_position].name
+            self.history[name].append(name + '-' + new_move)
+
+            rook_position = 'h' + old_position[1]
+            rook_newposition = LIST_BOARD[xK][yK-1]
+
+            self.board[rook_newposition] = self.board[rook_position]
+            self.board[rook_newposition].position = rook_newposition
+            self.board[rook_position] = 'E'
+
+            # Rook moved
+            name = self.board[rook_newposition].name
+            self.history[name].append(
+                name + '-' + rook_position+rook_newposition)
+
+            if self.turn == "White":
+                self.turn = "Black"
+            else:
+                self.turn = "White"
+
     def push(self, new_move):
         # print("Pushing ", new_move)
         new_position = new_move[2:]
         old_position = new_move[:2]
+        if self.board[old_position].name in ['k', 'K']:
+            self.board[old_position].has_moved = True
 
         # Save the overwritten and overwrite pieces for pop
         self.over_written.append(self.board[new_position])
@@ -843,6 +970,8 @@ class Board:
             self.board[self.last_move[-1][2:]
                        ].position = self.last_move[-1][2:]
 
+        if self.board[self.last_move[-1][:2]].name in ['k', 'K']:
+            self.board[self.last_move[-1][:2]].has_moved = False
         # print(self.board[self.last_move[-1][:2]].position)
         # print(self.board[self.last_move[-1][2:]])
 

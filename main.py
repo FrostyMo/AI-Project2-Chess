@@ -133,18 +133,19 @@ def main():
         if b1.check_Mate == True or len(moves) == 0:
             print("\Check Mate!\n")
             break
-        # eval, move = minimax2(2, -math.inf, +math.inf)
-        # b1.move_From(move)
+        eval, move = minimax2(2, -math.inf, +math.inf)
+        b1.move_From(move)
         print(moves)
-        while True:
-            new_move = input("Please enter your move (e.g a2a4): ")
-            if new_move in moves:
-                b1.move_From(new_move)
-                break
-            else:
-                print("Invalid Move entered, please enter again!")
-
+        # while True:
+        #     new_move = input("Please enter your move (e.g a2a4): ")
+        #     if new_move in moves:
+        #         b1.move_From(new_move)
+        #         break
+        #     else:
+        #         print("Invalid Move entered, please enter again!")
+        print("PLAYER MOVED: ", b1.named_move[-1])
         b1.print_ChessBoard()
+
         if b1.stale_mate == True:
             print("\nStalemate!\n")
             break
@@ -160,6 +161,7 @@ def main():
             print("\nCheck Mate!\n")
             break
         b1.move_From(move)
+        print("AI MOVED: ", b1.named_move[-1])
         CHESS_BOARD = b1
         # b1.print_ChessBoard()
 
